@@ -22,6 +22,9 @@ console.log('Connected to MongoDb Server');
 db.collection('Users').findOneAndUpdate({
 	_id: new ObjectID('592590df52c67d1c567b2fbc')
 }, {
+	$set: {
+		name: 'Anthony Scott'
+	},
 	$inc: {
 		age: 1
 	}
