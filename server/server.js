@@ -26,7 +26,7 @@ app.get('/todos', (req, res) => {
 		res.send({todos});
 	}, (e) => {
 		res.send(400).send(e);
-	})
+	});
 });
 
 app.listen(3000, () => {
