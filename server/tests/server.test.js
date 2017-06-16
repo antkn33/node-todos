@@ -113,7 +113,7 @@ describe('GET /todos/:id', () => {
 	it('should return a 404 if todo not found', (done) => {
 		var hexId = new ObjectID().toHexString();
 		request(app)
-				.delete('/todos/123')
+				.delete(`/todos/${hexId}`)
 				.expect(404)
 				.end(done);
  	});
@@ -144,7 +144,7 @@ describe('GET /todos/:id', () => {
 					expect(res.body.todo.completed).toBe(true);
 					expect(res.body.todo.completedAt).toBeA('number');
 				})
-				.end(done)
+				.end(done);
 	 });
 
 	 it('should clear completedAt when todo is not completed', (done) => {
@@ -163,7 +163,7 @@ describe('GET /todos/:id', () => {
 					expect(res.body.todo.completed).toBe(false);
 					expect(res.body.todo.completedAt).toNotExist();
 				})
-				.end(done)
+				.end(done);
 	 });
  });
  
@@ -214,7 +214,7 @@ describe('POST /users', () => {
 					expect(user).toExist();
 					expect(user.password).toNotBe(password);
 					done();
-				});
+				}).catch((e) => done(e));
 			});
 	});
 
@@ -239,5 +239,56 @@ describe('POST /users', () => {
 			})
 			.expect(400)
 			.end(done)
+	});
+});
+
+describe('POST /users/login', () => {
+	it('should login a user and return an auth token', (done) => {
+		request(app)
+			.post('/users/login')
+			.send({
+				email: users[1].email,
+				password: users[1].password
+			})
+			.expect(200)
+			.expect((res) => {
+				expect(res.headers['x-auth']).toExist();
+			})
+			.end((err, res) => {
+				if (err) {
+					return done(err);
+				}
+
+				User.findById(users[1]._id).then((user) => {
+					expect(user.tokens[0]).toInclude({
+						access: 'auth',
+						token: res.headers['x-auth']
+					});
+					done();
+				}).catch((e) => done(e));
+			});
+	});
+	
+	it('should reject invalid login', (done) => {
+		request(app)
+			.post('/users/login')
+			.send({
+				email: users[1].email,
+				password: users[1].password + '1'
+			})
+			.expect(400)
+			.expect((res) => {
+				expect(res.headers['x-auth']).toNotExist();
+			})
+			.end((err, res) => {
+				if (err) {
+					return done(err);
+				}
+
+				User.findById(users[1]._id).then((user) => {
+					expect(user.tokens.length).toBe(0);
+					done();
+			}).catch((e) => done(e));
+			});
 	});
 });
